@@ -1,6 +1,7 @@
 module Meshes
 
 export EquispacedRectangleMesh
+export UnstructuredMesh
 
 import ..Domains: IntervalDomain, RectangleDomain, SphereDomain
 
@@ -130,6 +131,27 @@ end
 struct EquiangularCubedSphereMesh{FT} <: AbstractMesh{FT}
     domain::SphereDomain{FT}
     n::Int64
+end
+
+"""
+    UnstructuredMesh(domain::HorizontalDomain, n::Integer)
+
+A regular `AbstractMesh` of `domain` with `n` unstructured elements.
+"""
+struct UnstructuredMesh{FT, HD <: HorizontalDomain{FT}} <:
+       AbstractMesh{FT}
+    domain::HD
+    n::Int64 # number of elements
+end
+
+function UnstructuredMesh(domain::HorizontalDomain, n)
+    # TODO
+    UnstructuredMesh(domain, n)
+end
+
+function Base.show(io::IO, mesh::HorizontalDomain)
+    print(io, "UnstructuredMesh of ", mesh.n, " elements of ")
+    print(io, mesh.domain)
 end
 
 end # module
