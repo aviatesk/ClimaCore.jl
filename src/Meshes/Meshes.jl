@@ -1,7 +1,7 @@
 module Meshes
 
 export EquispacedRectangleMesh
-export UnstructuredMesh
+export TensorProductMesh
 
 import ..Domains: IntervalDomain, RectangleDomain, SphereDomain
 
@@ -134,23 +134,25 @@ struct EquiangularCubedSphereMesh{FT} <: AbstractMesh{FT}
 end
 
 """
-    UnstructuredMesh(domain::HorizontalDomain, n::Integer)
+    TensorProductMesh(domain::RectangleDomain, n::Integer)
 
-A regular `AbstractMesh` of `domain` with `n` unstructured elements.
+A tensor-product `AbstractMesh` of `domain` with `n1` elements in dimension 1, and `n2`
+in dimension 2.
 """
-struct UnstructuredMesh{FT, HD <: HorizontalDomain{FT}} <:
+struct TensorProductMesh{FT, RD <: RectangleDomain{FT}} <:
        AbstractMesh{FT}
-    domain::HD
-    n::Int64 # number of elements
+    domain::RD
+    n1::Int64 # number of elements in x1 direction
+    n2::Int64 # number of elements in x2 direction
 end
 
-function UnstructuredMesh(domain::HorizontalDomain, n)
+function TensorProductMesh(domain::RectangleDomain, n1, n2)
     # TODO
-    UnstructuredMesh(domain, n)
+    TensorProductMesh(domain, n1, n2)
 end
 
-function Base.show(io::IO, mesh::HorizontalDomain)
-    print(io, "UnstructuredMesh of ", mesh.n, " elements of ")
+function Base.show(io::IO, mesh::RectangleDomain)
+    print(io, mesh.n1, "×", mesh.n2, " TensorProductMesh of ")
     print(io, mesh.domain)
 end
 
