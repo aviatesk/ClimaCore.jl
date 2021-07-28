@@ -179,7 +179,7 @@ function TensorProductMesh(domain::RectangleDomain{FT}, n1, n2, coordinates = no
         # Face 2
         z1 = z1s + 1
         if z1 == n1 && !x1periodic
-            faces[(e-1) * 4 + 2] = (e, 1, 0, 2, false)
+            faces[(e-1) * 4 + 2] = (e, 2, 0, 2, false)
         else
             if z1 == n1
                 z1 -= n1
@@ -193,7 +193,7 @@ function TensorProductMesh(domain::RectangleDomain{FT}, n1, n2, coordinates = no
         z1 = z1s
         z2 = z2s - 1
         if z2 < 0 && !x2periodic
-            faces[(e-1) * 4 + 3] = (e, 1, 0, 3, false)
+            faces[(e-1) * 4 + 3] = (e, 3, 0, 3, false)
         else
             if z2 < 0
                 z2 += n2
@@ -206,7 +206,7 @@ function TensorProductMesh(domain::RectangleDomain{FT}, n1, n2, coordinates = no
         # Face 4
         z2 = z2s + 1
         if z2 == n2 && !x2periodic
-            faces[(e-1) * 4 + 4] = (e, 1, 0, 4,false)
+            faces[(e-1) * 4 + 4] = (e, 4, 0, 4,false)
         else
             if z2 == n2
                 z2 -= n2
