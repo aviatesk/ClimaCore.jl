@@ -42,3 +42,10 @@ function nlocalelems(topology::TensorProductTopology)
     n2 = topology.mesh.n2
     return n1 * n2
 end
+
+function opposing_face(topology::TensorProductTopology, elem::Integer, face::Integer)
+    @assert 1 <= elem <= nlocalelems(topology)
+    @assert 1 <= face <= 4
+
+    return topology.mesh.faces[(elem-1) * 4 + face][3:5]
+end
