@@ -124,3 +124,55 @@ end
         @test faces[4] == (4, 3, 2, 4, false)
     end
 end
+
+@testset "simple tensor-product grid boundry faces iterator" begin
+    @testset "1×1 element quad mesh with all periodic boundries" begin
+        _, _, ts_topology = tensorproduct_grid(1, 1, true, true)
+        @test length(Topologies.boundary_faces(ts_topology, 1)) == 0
+        @test length(Topologies.boundary_faces(ts_topology, 2)) == 0
+        @test length(Topologies.boundary_faces(ts_topology, 3)) == 0
+        @test length(Topologies.boundary_faces(ts_topology, 4)) == 0
+        @test isempty(collect(Topologies.boundary_faces(ts_topology, 1)))
+        @test isempty(collect(Topologies.boundary_faces(ts_topology, 2)))
+        @test isempty(collect(Topologies.boundary_faces(ts_topology, 3)))
+        @test isempty(collect(Topologies.boundary_faces(ts_topology, 4)))
+    end
+    @testset "1×1 element quad mesh with 1 periodic boundary" begin
+        _, _, ts_topology = tensorproduct_grid(1, 1, true, false)
+        @test length(Topologies.boundary_faces(ts_topology, 1)) == 0
+        @test length(Topologies.boundary_faces(ts_topology, 2)) == 0
+        @test length(Topologies.boundary_faces(ts_topology, 3)) == 1
+        @test length(Topologies.boundary_faces(ts_topology, 4)) == 1
+        @test isempty(collect(Topologies.boundary_faces(ts_topology, 1)))
+        @test isempty(collect(Topologies.boundary_faces(ts_topology, 2)))
+        @test collect(Topologies.boundary_faces(ts_topology, 3)) == [(1, 3)]
+        @test collect(Topologies.boundary_faces(ts_topology, 4)) == [(1, 4)]
+    end
+    @testset "1×1 element quad mesh with non-periodic boundaries" begin
+        _, _, ts_topology = tensorproduct_grid(1, 1, false, false)
+        @test length(Topologies.boundary_faces(ts_topology, 1)) == 1
+        @test length(Topologies.boundary_faces(ts_topology, 2)) == 1
+        @test length(Topologies.boundary_faces(ts_topology, 3)) == 1
+        @test length(Topologies.boundary_faces(ts_topology, 4)) == 1
+        @test collect(Topologies.boundary_faces(ts_topology, 1)) == [(1, 1)]
+        @test collect(Topologies.boundary_faces(ts_topology, 2)) == [(1, 2)]
+        @test collect(Topologies.boundary_faces(ts_topology, 3)) == [(1, 3)]
+        @test collect(Topologies.boundary_faces(ts_topology, 4)) == [(1, 4)]
+    end
+    @testset "2×3 element quad mesh with non-periodic boundaries" begin
+        _, _, ts_topology = tensorproduct_grid(2, 3, false, false)
+        @test length(Topologies.boundary_faces(ts_topology, 1)) == 3
+        @test length(Topologies.boundary_faces(ts_topology, 2)) == 3
+        @test length(Topologies.boundary_faces(ts_topology, 3)) == 2
+        @test length(Topologies.boundary_faces(ts_topology, 4)) == 2
+
+        @test collect(Topologies.boundary_faces(ts_topology, 1)) ==
+              [(1, 1), (3, 1), (5, 1)]
+        @test collect(Topologies.boundary_faces(ts_topology, 2)) ==
+              [(2, 2), (4, 2), (6, 2)]
+        @test collect(Topologies.boundary_faces(ts_topology, 3)) ==
+              [(1, 3), (2, 3)]
+        @test collect(Topologies.boundary_faces(ts_topology, 4)) ==
+              [(5, 4), (6, 4)]
+    end
+end

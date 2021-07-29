@@ -208,3 +208,101 @@ function Base.iterate(
     end
     return (elem, boundary), z + 1
 end
+
+# VertexIterator
+function Base.length(viter::VertexIterator{T}) where {T <: TensorProductTopology}
+    topology = viter.topology
+    mesh = topology.mesh
+    n1 = mesh.n1
+    n2 = mesh.n2
+    x1periodic = isnothing(mesh.domain.x1boundary)
+    x2periodic = isnothing(mesh.domain.x2boundary)
+    nv1 = x1periodic ? n1 : n1 + 1
+    nv2 = x2periodic ? n2 : n2 + 1
+    return nv1 * nv2
+end
+
+function Base.iterate(
+    viter::VertexIterator{T},
+    (z1, z2) = (0, 0),
+) where {T <: TensorProductTopology}
+    topology = viter.topology
+    mesh = topology.mesh
+    n1 = mesh.n1
+    n2 = mesh.n2
+    x1periodic = isnothing(mesh.domain.x1boundary)
+    x2periodic = isnothing(mesh.domain.x2boundary)
+    nv1 = x1periodic ? n1 : n1 + 1
+    nv2 = x2periodic ? n2 : n2 + 1
+
+    if z2 >= nv2
+        return nothing
+    end
+    vertex = Vertex(topology, (z1, z2))
+    z1 += 1
+    if z1 >= nv1
+        nextstate = (0, z2 + 1)
+    else
+        nextstate = (z1, z2)
+    end
+    return vertex, nextstate
+end
+
+# Vertex
+function Base.length(vertex::Vertex{T}) where {T <: TensorProductTopology}
+    topology = vertex.topology
+    mesh = topology.mesh
+    n1 = mesh.n1
+    n2 = mesh.n2
+    x1periodic = isnothing(mesh.domain.x1boundary)
+    x2periodic = isnothing(mesh.domain.x2boundary)
+
+    z1, z2 = vertex.num
+
+    k1 = !x1periodic && (z1 == 0 || z1 == n1) ? 1 : 2
+    k2 = !x2periodic && (z2 == 0 || z2 == n2) ? 1 : 2
+    return k1 * k2
+end
+
+function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: TensorProductTopology}
+    topology = vertex.topology
+    mesh = topology.mesh
+    n1 = mesh.n1
+    n2 = mesh.n2
+    x1periodic = isnothing(mesh.domain.x1boundary)
+    x2periodic = isnothing(mesh.domain.x2boundary)
+    nv1 = x1periodic ? n1 : n1 + 1
+    nv2 = x2periodic ? n2 : n2 + 1
+    z1, z2 = vertex.num
+
+    vert += 1
+    if !x1periodic
+        if z1 == 0 && (vert == 2 || vert == 4)
+            vert += 1
+        end
+        if z1 == n1 && (vert == 1 || vert == 3)
+            vert += 1
+        end
+    end
+    if !x2periodic
+        if z2 == 0 && (vert == 3 || vert == 4)
+            vert += 2
+        end
+        if z2 == n2 && (vert == 1 || vert == 2)
+            vert += 2
+        end
+    end
+
+    if vert > 4
+        return nothing
+    end
+
+    if vert == 2 || vert == 4
+        z1 = mod(z1 - 1, nv1)
+    end
+    if vert == 3 || vert == 4
+        z2 = mod(z2 - 1, nv1)
+    end
+    elem = z2 * n1 + z1 + 1
+    return (elem, vert), vert
+end
