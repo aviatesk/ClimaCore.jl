@@ -148,7 +148,6 @@ struct BoundaryFaceIterator{T}
     boundary::Int
 end
 
-
 """
     vertices(topology)
 

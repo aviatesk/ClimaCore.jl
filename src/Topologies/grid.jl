@@ -119,9 +119,7 @@ function opposing_face(topology::GridTopology, elem::Integer, face::Integer)
     return opelem, opface, false
 end
 
-
 # InteriorFaceIterator
-
 function Base.length(fiter::InteriorFaceIterator{T}) where {T <: GridTopology}
     topology = fiter.topology
     mesh = topology.mesh
@@ -205,6 +203,7 @@ function boundary_names(topology::GridTopology)
         isnothing(x2boundary) ? x1boundary : (x1boundary..., x2boundary...)
     end
 end
+
 function boundary_tag(topology::GridTopology, name::Symbol)
     x1boundary = topology.mesh.domain.x1boundary
     x2boundary = topology.mesh.domain.x2boundary
@@ -333,7 +332,6 @@ function Base.length(vertex::Vertex{T}) where {T <: GridTopology}
     k2 = !x2periodic && (z2 == 0 || z2 == n2) ? 1 : 2
     return k1 * k2
 end
-
 
 function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: GridTopology}
     # iterator of (element, vertnum) that share global vertex

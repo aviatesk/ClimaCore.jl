@@ -93,3 +93,34 @@ end
         @test Topologies.opposing_face(ts_topology, 2, 4) == (4, 3, false)
     end
 end
+
+@testset "simple tensor-product grid interior faces iterator" begin
+    @testset "1×1 element quad mesh with all periodic boundries" begin
+        _, _, ts_topology = tensorproduct_grid(1, 1, true, true)
+        @test length(Topologies.interior_faces(ts_topology)) == 2
+        faces = collect(Topologies.interior_faces(ts_topology))
+        @test faces[1] == (1, 1, 1, 2, false)
+        @test faces[2] == (1, 3, 1, 4, false)
+    end
+    @testset "1×1 element quad mesh with 1 periodic boundary" begin
+        _, _, ts_topology = tensorproduct_grid(1, 1, true, false)
+        @test length(Topologies.interior_faces(ts_topology)) == 1
+        faces = collect(Topologies.interior_faces(ts_topology))
+        @test faces[1] == (1, 1, 1, 2, false)
+    end
+    @testset "1×1 element quad mesh with non-periodic boundaries" begin
+        _, _, ts_topology = tensorproduct_grid(1, 1, false, false)
+        @test length(Topologies.interior_faces(ts_topology)) == 0
+        faces = collect(Topologies.interior_faces(ts_topology))
+        @test isempty(faces)
+    end
+    @testset "2×2 element quad mesh with non-periodic boundaries" begin
+        _, _, ts_topology = tensorproduct_grid(2, 2, false, false)
+        @test length(Topologies.interior_faces(ts_topology)) == 4
+        faces = collect(Topologies.interior_faces(ts_topology))
+        @test faces[1] == (2, 1, 1, 2, false)
+        @test faces[2] == (3, 3, 1, 4, false)
+        @test faces[3] == (4, 1, 3, 2, false)
+        @test faces[4] == (4, 3, 2, 4, false)
+    end
+end
