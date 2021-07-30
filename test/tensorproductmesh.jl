@@ -31,30 +31,14 @@ end
 
     @testset "assert correct element numbering" begin
         _, _, ts_topology = tensorproduct_grid(1, 1, true, true)
-        @test_throws AssertionError Topologies.opposing_face(
-            ts_topology,
-            0,
-            1,
-        )
-        @test_throws AssertionError Topologies.opposing_face(
-            ts_topology,
-            2,
-            1,
-        )
+        @test_throws AssertionError Topologies.opposing_face(ts_topology, 0, 1)
+        @test_throws AssertionError Topologies.opposing_face(ts_topology, 2, 1)
     end
 
     @testset "assert correct face numbering" begin
         _, _, ts_topology = tensorproduct_grid(1, 1, true, true)
-        @test_throws AssertionError Topologies.opposing_face(
-            ts_topology,
-            1,
-            5,
-        )
-        @test_throws AssertionError Topologies.opposing_face(
-            ts_topology,
-            1,
-            0,
-        )
+        @test_throws AssertionError Topologies.opposing_face(ts_topology, 1, 5)
+        @test_throws AssertionError Topologies.opposing_face(ts_topology, 1, 0)
     end
 
     @testset "1×1 element quad mesh with all periodic boundries" begin

@@ -43,15 +43,21 @@ function nlocalelems(topology::TensorProductTopology)
     return n1 * n2
 end
 
-function opposing_face(topology::TensorProductTopology, elem::Integer, face::Integer)
+function opposing_face(
+    topology::TensorProductTopology,
+    elem::Integer,
+    face::Integer,
+)
     @assert 1 <= elem <= nlocalelems(topology)
     @assert 1 <= face <= 4
 
-    return topology.mesh.faces[(elem-1) * 4 + face][3:5]
+    return topology.mesh.faces[(elem - 1) * 4 + face][3:5]
 end
 
 # InteriorFaceIterator
-function Base.length(fiter::InteriorFaceIterator{T}) where {T <: TensorProductTopology}
+function Base.length(
+    fiter::InteriorFaceIterator{T},
+) where {T <: TensorProductTopology}
     topology = fiter.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -153,7 +159,9 @@ function boundaries(topology::TensorProductTopology)
     return topology.boundaries
 end
 
-function Base.length(bfiter::BoundaryFaceIterator{T}) where {T <: TensorProductTopology}
+function Base.length(
+    bfiter::BoundaryFaceIterator{T},
+) where {T <: TensorProductTopology}
     boundary = bfiter.boundary
     topology = bfiter.topology
     if boundary in (1, 2)
@@ -172,7 +180,9 @@ function Base.length(bfiter::BoundaryFaceIterator{T}) where {T <: TensorProductT
     end
 end
 
-function Base.iterate(bfiter::BoundaryFaceIterator{T}) where {T <: TensorProductTopology}
+function Base.iterate(
+    bfiter::BoundaryFaceIterator{T},
+) where {T <: TensorProductTopology}
     boundary = bfiter.boundary
     topology = bfiter.topology
     if boundary in (1, 2) && isnothing(topology.mesh.domain.x1boundary)
@@ -210,7 +220,9 @@ function Base.iterate(
 end
 
 # VertexIterator
-function Base.length(viter::VertexIterator{T}) where {T <: TensorProductTopology}
+function Base.length(
+    viter::VertexIterator{T},
+) where {T <: TensorProductTopology}
     topology = viter.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -264,7 +276,10 @@ function Base.length(vertex::Vertex{T}) where {T <: TensorProductTopology}
     return k1 * k2
 end
 
-function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: TensorProductTopology}
+function Base.iterate(
+    vertex::Vertex{T},
+    vert = 0,
+) where {T <: TensorProductTopology}
     topology = vertex.topology
     mesh = topology.mesh
     n1 = mesh.n1
