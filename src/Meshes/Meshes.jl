@@ -229,10 +229,10 @@ function TensorProductMesh(
         range2 = range(domain.x2min, domain.x2max; length = n2 + 1)
 
         # Coordinates array, row-major storage
-        for i in 1:(n2 + 1)
-            for j in 1:(n1 + 1)
-                coordinates[(i - 1) * n1 + j] =
-                    Cartesian2DPoint(range1[j], range2[i])
+        for i in 1:(n1 + 1)
+            for j in 1:(n2 + 1)
+                coordinates[(i - 1) * (n2 + 1) + j] =
+                    Cartesian2DPoint(range1[i], range2[j])
             end
         end
     end
