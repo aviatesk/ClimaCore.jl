@@ -20,7 +20,7 @@ module Topologies
 
 import ..Geometry
 import ..Domains: Domains, coordinate_type
-import ..Meshes: Meshes, EquispacedRectangleMesh
+import ..Meshes: Meshes, EquispacedRectangleMesh, WarpedMesh
 
 # TODO: seperate types for MPI/non-MPI topologies
 """
@@ -105,7 +105,6 @@ function vertex_node_index(vertex_num, Nq)
     end
 end
 
-
 """
     interior_faces(topology::AbstractTopology)
 
@@ -166,8 +165,14 @@ struct Vertex{T <: AbstractTopology, V}
     num::V
 end
 
+struct VertexCoordinatesIterator{T <: AbstractTopology}
+    topology::T
+end
 
-
+struct VertexCoordinates{T <: AbstractTopology, V}
+    topology::T
+    coords::V
+end
 
 # implementations
 include("grid.jl")

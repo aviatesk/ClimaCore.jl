@@ -379,3 +379,51 @@ function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: GridTopology}
     elem = z2 * n1 + z1 + 1
     return (elem, vert), vert
 end
+
+# Vertex coordinates
+function Base.length(
+    vcoordsiter::VertexCoordinatesIterator{T},
+) where {T <: GridTopology}
+    topology = vcoordsiter.topology
+    mesh = topology.mesh
+    n1 = mesh.n1
+    n2 = mesh.n2
+    x1periodic = isnothing(mesh.domain.x1boundary)
+    x2periodic = isnothing(mesh.domain.x2boundary)
+    nv1 = x1periodic ? n1 : n1 + 1
+    nv2 = x2periodic ? n2 : n2 + 1
+    return nv1 * nv2
+end
+
+function Base.iterate(
+    vcoordsiter::VertexCoordinatesIterator{T},
+    (z1, z2) = (0, 0),
+) where {T <: GridTopology}
+    topology = vcoordsiter.topology
+    mesh = topology.mesh
+    n1 = mesh.n1
+    n2 = mesh.n2
+    x1periodic = isnothing(mesh.domain.x1boundary)
+    x2periodic = isnothing(mesh.domain.x2boundary)
+    nv1 = x1periodic ? n1 : n1 + 1
+    nv2 = x2periodic ? n2 : n2 + 1
+
+    if z2 >= nv2
+        return nothing
+    end
+
+    range1 = mesh.range1
+    range2 = mesh.range2
+
+    v = Geometry.Cartesian2DPoint(range1[z1 + 1], range2[z2 + 1])
+
+    vertex = VertexCoordinates(topology, v)
+    z1 += 1
+    if z1 >= nv1
+        nextstate = (0, z2 + 1)
+    else
+        nextstate = (z1, z2)
+    end
+
+    return vertex, nextstate
+end
