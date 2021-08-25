@@ -2,7 +2,7 @@ module Domains
 
 import ..Geometry
 using IntervalSets
-export RectangleDomain
+export RectangleDomain, WarpedDomain
 
 
 abstract type AbstractDomain end
@@ -70,7 +70,7 @@ end
         x2periodic = false,
     )
 
-Construct a `RectangularDomain` in the horizontal. 
+Construct a `RectangularDomain` in the horizontal.
 If a given x1 or x2 boundary is not periodic, then `x1boundary` or `x2boundary` boundary tag keyword arguments must be supplied.
 """
 function RectangleDomain(
@@ -124,6 +124,12 @@ function Base.show(io::IO, domain::RectangleDomain)
 end
 coordinate_type(::RectangleDomain{FT}) where {FT} =
     Geometry.Cartesian2DPoint{FT}
+
+struct WarpedDomain{RD, F} <:
+       HorizontalDomain where {RD <: RectangleDomain, F <: Function}
+    domain::RD
+    warp_fun::F
+end
 
 # coordinates (-pi/2 < lat < pi/2, -pi < lon < pi)
 struct SphereDomain{FT} <: HorizontalDomain

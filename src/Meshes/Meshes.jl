@@ -2,7 +2,8 @@ module Meshes
 
 export EquispacedRectangleMesh
 
-import ..Domains: IntervalDomain, RectangleDomain, SphereDomain
+import ..Domains: IntervalDomain, RectangleDomain, WarpedDomain, SphereDomain
+import ..Geometry: Cartesian2DPoint
 
 """
     AbstractMesh
@@ -15,8 +16,6 @@ in a file, it would contain the filename.
 abstract type AbstractMesh{FT} end
 
 Base.eltype(::AbstractMesh{FT}) where {FT} = FT
-
-warp_mesh(mesh::AbstractMesh) = mesh
 
 struct IntervalMesh{FT, I <: IntervalDomain, V <: AbstractVector, B} <:
        AbstractMesh{FT}
@@ -130,6 +129,27 @@ end
 struct EquiangularCubedSphereMesh{FT} <: AbstractMesh{FT}
     domain::SphereDomain{FT}
     n::Int64
+end
+
+"""
+    WarpedMesh(warped_domain::WarpedDomain, underlying_mesh::AbstractMesh, warped_mesh::AbstractMesh)
+
+A warped `AbstractMesh` of `domain`.
+"""
+struct WarpedMesh{FT, WD <: WarpedDomain{FT}, UM, WM} <: AbstractMesh{FT}
+    warped_domain::WD
+    underlying_mesh::UM
+    warped_mesh::WM
+end
+
+function WarpedEquispacedRectangleMesh(warped_domain::WarpedDomain, args...)
+
+    underlying_mesh = EquispacedRectangleMesh(warped_domain.domain, args...)
+
+    # Warp the underlying mesh with the warping function
+    warped_mesh = warped_domain.warp_fun(underlying_mesh)
+
+    WarpedMesh(warped_domain, underlying_mesh, warped_mesh)
 end
 
 end # module
