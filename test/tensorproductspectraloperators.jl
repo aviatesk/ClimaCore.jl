@@ -22,7 +22,38 @@ space = Spaces.SpectralElementSpace2D(ts_topology, quad)
 
 coords = Fields.coordinate_field(space)
 
-@testset "TensorProductMesh: gradient" begin
+@testset "TensorProductMesh: interpolate / restrict" begin
+    INq = 9
+    Iquad = Spaces.Quadratures.GLL{INq}()
+    Ispace = Spaces.SpectralElementSpace2D(ts_topology, Iquad)
+
+    I = Operators.Interpolate(Ispace)
+    R = Operators.Restrict(space)
+
+    f = sin.(coords.x1 .+ 2 .* coords.x2)
+
+    interpolated_field = I.(f)
+    Spaces.weighted_dss!(interpolated_field)
+
+    @test axes(interpolated_field).quadrature_style == Iquad
+    @test axes(interpolated_field).topology == ts_topology
+
+    restrict_field = R.(f)
+    Spaces.weighted_dss!(restrict_field)
+
+    @test axes(restrict_field).quadrature_style == quad
+    @test axes(restrict_field).topology == ts_topology
+
+    interp_restrict_field = R.(I.(f))
+    Spaces.weighted_dss!(interp_restrict_field)
+
+    @test axes(interp_restrict_field).quadrature_style == quad
+    @test axes(interp_restrict_field).topology == ts_topology
+
+    @test norm(interp_restrict_field .- f) ≤ 3.0e-4
+end
+
+@testset "gradient" begin
     f = sin.(coords.x1 .+ 2 .* coords.x2)
 
     grad = Operators.Gradient()
@@ -30,9 +61,11 @@ coords = Fields.coordinate_field(space)
     Spaces.weighted_dss!(gradf)
 
     @test gradf ≈
-          Geometry.Cartesian12Vector.(
-        cos.(coords.x1 .+ 2 .* coords.x2),
-        2 .* cos.(coords.x1 .+ 2 .* coords.x2),
+          Geometry.Covariant12Vector.(
+        Geometry.Cartesian12Vector.(
+            cos.(coords.x1 .+ 2 .* coords.x2),
+            2 .* cos.(coords.x1 .+ 2 .* coords.x2),
+        ),
     ) rtol = 1e-2
 end
 
@@ -43,7 +76,7 @@ end
     gradf = wgrad.(f)
     Spaces.weighted_dss!(gradf)
 
-    @test gradf ≈
+    @test Geometry.Cartesian12Vector.(gradf) ≈
           Geometry.Cartesian12Vector.(
         cos.(coords.x1 .+ 2 .* coords.x2),
         2 .* cos.(coords.x1 .+ 2 .* coords.x2),
@@ -224,7 +257,6 @@ end
         (k^2 + l^2)^2 * sin(k * coords.x1 + l * coords.x2),
         0.0,
     )
-
     curl = Operators.Curl()
     wcurl = Operators.WeakCurl()
 
@@ -232,12 +264,14 @@ end
     wgrad = Operators.WeakGradient()
 
     χ = Spaces.weighted_dss!(
-        @. wgrad(sdiv(y)) - Geometry.Cartesian12Vector(
+        @. Geometry.Cartesian12Vector(wgrad(sdiv(y))) -
+           Geometry.Cartesian12Vector(
             wcurl(Geometry.Covariant3Vector(curl(y))),
         )
     )
     ∇⁴y = Spaces.weighted_dss!(
-        @. wgrad(sdiv(χ)) - Geometry.Cartesian12Vector(
+        @. Geometry.Cartesian12Vector(wgrad(sdiv(χ))) -
+           Geometry.Cartesian12Vector(
             wcurl(Geometry.Covariant3Vector(curl(χ))),
         )
     )
