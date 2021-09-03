@@ -219,7 +219,9 @@ eachslabindex(topology::TensorProductTopology{M}) where {M <: AbstractMesh} =
 
 
 # InteriorFaceIterator
-function Base.length(fiter::InteriorFaceIterator)
+function Base.length(
+    fiter::InteriorFaceIterator{T},
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     topology = fiter.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -229,7 +231,10 @@ function Base.length(fiter::InteriorFaceIterator)
     return (x1periodic ? n1 : n1 - 1) * n2 + n1 * (x2periodic ? n2 : n2 - 1)
 end
 
-function Base.iterate(fiter::InteriorFaceIterator, (d, z1, z2) = (1, 0, 0))
+function Base.iterate(
+    fiter::InteriorFaceIterator{T},
+    (d, z1, z2) = (1, 0, 0),
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     # iteration state (major first)
     #  - d ∈ (1,2): face direction
     #  - z1 ∈ 0:n1-1: 0-based face index in direction 1
@@ -325,7 +330,9 @@ function boundaries(
     return topology.boundaries
 end
 
-function Base.length(bfiter::BoundaryFaceIterator)
+function Base.length(
+    bfiter::BoundaryFaceIterator{T},
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     boundary = bfiter.boundary
     topology = bfiter.topology
     if boundary in (1, 2)
@@ -344,7 +351,9 @@ function Base.length(bfiter::BoundaryFaceIterator)
     end
 end
 
-function Base.iterate(bfiter::BoundaryFaceIterator)
+function Base.iterate(
+    bfiter::BoundaryFaceIterator{T},
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     boundary = bfiter.boundary
     topology = bfiter.topology
     if boundary in (1, 2) && isnothing(topology.mesh.domain.x1boundary)
@@ -356,7 +365,10 @@ function Base.iterate(bfiter::BoundaryFaceIterator)
     Base.iterate(bfiter, 0)
 end
 
-function Base.iterate(bfiter::BoundaryFaceIterator, z)
+function Base.iterate(
+    bfiter::BoundaryFaceIterator{T},
+    z,
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     boundary = bfiter.boundary
     topology = bfiter.topology
     mesh = topology.mesh
@@ -379,7 +391,9 @@ function Base.iterate(bfiter::BoundaryFaceIterator, z)
 end
 
 # VertexIterator
-function Base.length(viter::VertexIterator)
+function Base.length(
+    viter::VertexIterator{T},
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     topology = viter.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -391,7 +405,10 @@ function Base.length(viter::VertexIterator)
     return nv1 * nv2
 end
 
-function Base.iterate(viter::VertexIterator, (z1, z2) = (0, 0))
+function Base.iterate(
+    viter::VertexIterator{T},
+    (z1, z2) = (0, 0),
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     topology = viter.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -415,7 +432,9 @@ function Base.iterate(viter::VertexIterator, (z1, z2) = (0, 0))
 end
 
 # Vertex
-function Base.length(vertex::Vertex)
+function Base.length(
+    vertex::Vertex{T},
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     topology = vertex.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -430,7 +449,10 @@ function Base.length(vertex::Vertex)
     return k1 * k2
 end
 
-function Base.iterate(vertex::Vertex, vert = 0)
+function Base.iterate(
+    vertex::Vertex{T},
+    vert = 0,
+) where {M <: AbstractMesh, T <: TensorProductTopology{M}}
     # iterator of (element, vertnum) that share global vertex
     topology = vertex.topology
     mesh = topology.mesh
