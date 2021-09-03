@@ -243,4 +243,36 @@ function Base.show(io::IO, mesh::TensorProductMesh)
     print(io, mesh.domain)
 end
 
+"""
+    CubeMesh(domain::CubeDomain, n1::Integer, n2::Integer, n3::Integer)
+
+A tensor-product `AbstractMesh` of `CubeDomain` domain with `n1` elements in dimension 1,
+`n2` in dimension 2, and `n3` in dimension 3. `coordinates` is an optional argument that
+can be used to specify the coordinates vector. If `coordinates = nothing`, mesh vertices
+are defaulted to be equispaced.
+"""
+struct CubeMesh{FT, CD <: CubeDomain{FT}} <: AbstractMesh{FT}
+    domain::CD
+    n1::Int64 # number of elements in x1 direction
+    n2::Int64 # number of elements in x2 direction
+    n3::Int64 # number of elements in x3 direction
+    faces::Vector{Tuple{Int64, Int64, Int64, Int64, Bool}}
+    coordinates::Vector{Cartesian3DPoint{FT}}
+end
+
+function CubeMesh(
+    domain::CubeDomain{FT},
+    n1,
+    n2,
+    n3,
+    coordinates = nothing,
+) where {FT}
+
+    nelem = 2 * ((n1 * n2) + (n1 * n3) + (n2 * n3))
+    faces = Vector{Tuple{Int64, Int64, Int64, Int64, Bool}}(undef, nelem * 4)
+
+    # TODO: Traverse faces. Decide ordering
+    CubeMesh(domain, n1, n2, n3, faces, coordinates)
+end
+
 end # module

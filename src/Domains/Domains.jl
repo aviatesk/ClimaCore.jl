@@ -70,7 +70,7 @@ end
         x2periodic = false,
     )
 
-Construct a `RectangularDomain` in the horizontal. 
+Construct a `RectangularDomain` in the horizontal.
 If a given x1 or x2 boundary is not periodic, then `x1boundary` or `x2boundary` boundary tag keyword arguments must be supplied.
 """
 function RectangleDomain(
@@ -128,6 +128,36 @@ coordinate_type(::RectangleDomain{FT}) where {FT} =
 # coordinates (-pi/2 < lat < pi/2, -pi < lon < pi)
 struct SphereDomain{FT} <: HorizontalDomain
     radius::FT
+end
+
+struct CubeDomain{FT} <: AbstractDomain where {
+    FT <: AbstractFloat,
+}
+    x1min::FT
+    x1max::FT
+    x2min::FT
+    x2max::FT
+    x3min::FT
+    x3max::FT
+end
+
+"""
+    CubeDomain(x1::ClosedInterval, x2::ClosedInterval, x3::ClosedInterval;
+    )
+
+Construct a `CubeDomain` with the given bounds.
+"""
+function CubeDomain(x1::ClosedInterval, x2::ClosedInterval, x3::ClosedInterval)
+
+    CubeDomain(
+    float(x1.left),
+    float(x1.right),
+    float(x2.left),
+    float(x2.right),
+    float(x3.left),
+    float(x3.right),
+    )
+
 end
 
 

@@ -37,8 +37,7 @@ product_coordinates(xp::XPoint, z::Float64) = XZPoint(xp.x, z)
 
 @pointtype Cartesian3Point x3
 @pointtype Cartesian2DPoint x1 x2
-
-
+@pointtype Cartesian3DPoint x1 x2 x3
 
 
 components(p::Abstract2DPoint) =
