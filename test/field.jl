@@ -19,7 +19,7 @@ domain = Domains.RectangleDomain(
 n1, n2 = 1, 1
 Nij = 4
 mesh = Meshes.EquispacedRectangleMesh(domain, n1, n2)
-grid_topology = Topologies.GridTopology(mesh)
+grid_topology = Topologies.TensorProductTopology(mesh)
 
 quad = Spaces.Quadratures.GLL{Nij}()
 points, weights = Spaces.Quadratures.quadrature_points(Float64, quad)

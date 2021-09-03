@@ -9,7 +9,7 @@ n1, n2 = 4096, 4096
 Nq = 4
 
 mesh = Meshes.EquispacedRectangleMesh(domain, n1, n2)
-grid_topology = Topologies.GridTopology(mesh)
+grid_topology = Topologies.TensorProductTopology(mesh)
 quad = Spaces.Quadratures.GLL{Nq}()
 space = Spaces.SpectralElementSpace2D(grid_topology, quad)
 

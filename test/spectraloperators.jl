@@ -17,7 +17,7 @@ Nq = 5
 quad = Spaces.Quadratures.GLL{Nq}()
 
 grid_mesh = Meshes.EquispacedRectangleMesh(domain, 17, 16)
-grid_topology = Topologies.GridTopology(grid_mesh)
+grid_topology = Topologies.TensorProductTopology(grid_mesh)
 grid_space = Spaces.SpectralElementSpace2D(grid_topology, quad)
 grid_coords = Fields.coordinate_field(grid_space)
 

@@ -23,7 +23,7 @@ function rectangular_grid(
         x2boundary = x2periodic ? nothing : (:south, :north),
     )
     mesh = Meshes.EquispacedRectangleMesh(domain, n1, n2)
-    grid_topology = Topologies.GridTopology(mesh)
+    grid_topology = Topologies.TensorProductTopology(mesh)
     return (domain, mesh, grid_topology)
 end
 
@@ -79,7 +79,7 @@ function irregular_tensorproduct_grid(
         Vector{Cartesian2DPoint{typeof(x1min)}}(undef, (n1 + 1) * (n2 + 1))
 
     # Iterate mesh vertices
-    grid_topo = Topologies.GridTopology(mesh)
+    grid_topo = Topologies.TensorProductTopology(mesh)
     v_iter = Topologies.VertexIterator(grid_topo)
 
     for v in v_iter

@@ -14,7 +14,7 @@ import ClimaCore.Domains.Geometry: Cartesian2DPoint
         x2boundary = (:south, :north),
     )
     mesh = Meshes.EquispacedRectangleMesh(domain, 1, 1)
-    grid_topology = Topologies.GridTopology(mesh)
+    grid_topology = Topologies.TensorProductTopology(mesh)
 
     quad = Spaces.Quadratures.GLL{4}()
     points, weights = Spaces.Quadratures.quadrature_points(Float64, quad)

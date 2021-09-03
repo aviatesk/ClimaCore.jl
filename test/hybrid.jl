@@ -33,7 +33,7 @@ function hvspace_2D()
         x2boundary = (:a, :b),
     )
     horzmesh = Meshes.EquispacedRectangleMesh(horzdomain, 10, 1)
-    horztopology = Topologies.GridTopology(horzmesh)
+    horztopology = Topologies.TensorProductTopology(horzmesh)
 
     quad = Spaces.Quadratures.GLL{8}()
     horzspace = Spaces.SpectralElementSpace1D(horztopology, quad)

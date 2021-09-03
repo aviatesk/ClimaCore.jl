@@ -18,7 +18,7 @@ using OrdinaryDiffEq
     )
 
     mesh = Meshes.EquispacedRectangleMesh(domain, 5, 5)
-    grid_topology = Topologies.GridTopology(mesh)
+    grid_topology = Topologies.TensorProductTopology(mesh)
 
     Nq = 6
     quad = Spaces.Quadratures.GLL{Nq}()
