@@ -135,10 +135,10 @@ struct EquiangularCubedSphereMesh{FT} <: AbstractMesh{FT}
 end
 
 """
-    TensorProductMesh(domain::RectangleDomain, n::Integer)
+    TensorProductMesh(domain::RectangleDomain, n1::Integer, n2::Integer, coordinates::Vector{Cartesian2DPoint{FT})
 
 A tensor-product `AbstractMesh` of `domain` with `n1` elements in dimension 1, and `n2`
-in dimension 2.
+in dimension 2. `coordinates` is an optional argument that can be used to specify the coordinates vector. If `coordinates = nothing`, mesh vertices are defaulted to be equispaced.
 """
 struct TensorProductMesh{FT, RD <: RectangleDomain{FT}} <: AbstractMesh{FT}
     domain::RD
