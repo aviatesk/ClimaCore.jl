@@ -57,7 +57,7 @@ function init_state(x, p)
     u₂′ = -p.k * gaussian * sin(p.k * x1) * cos(p.k * x2)
 
 
-    u = Cartesian12Vector(U₁ + p.ϵ * u₁′, p.ϵ * u₂′)
+    u = Geometry.Cartesian12Vector(U₁ + p.ϵ * u₁′, p.ϵ * u₂′)
     # set initial tracer
     θ = sin(p.k * x2)
 
@@ -68,22 +68,22 @@ y0 = init_state.(Fields.coordinate_field(space), Ref(parameters))
 
 function flux(state, p)
     @unpack ρ, ρu, ρθ = state
-    u = ρu ./ ρ
+    u = ρu / ρ
     return (
         ρ = ρu,
         ρu = ((ρu ⊗ u) + (p.g * ρ^2 / 2) * LinearAlgebra.I),
-        ρθ = ρθ .* u,
+        ρθ = ρθ * u,
     )
 end
 
 function energy(state, p)
     @unpack ρ, ρu = state
-    u = ρu ./ ρ
+    u = ρu / ρ
     return ρ * (u.u1^2 + u.u2^2) / 2 + p.g * ρ^2 / 2
 end
 
 function total_energy(y, parameters)
-    sum(state -> energy(state, parameters), y)
+    sum(energy.(y, Ref(parameters)))
 end
 
 
@@ -94,6 +94,7 @@ function rhs!(dydt, y, _, t)
     R = Operators.Restrict(space)
 
     rparameters = Ref(parameters)
+
     @. dydt = -R(div(flux(I(y), rparameters)))
 
     Spaces.weighted_dss!(dydt)

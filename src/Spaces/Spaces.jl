@@ -14,18 +14,24 @@
 """
 module Spaces
 
-import ..DataLayouts, ..Geometry, ..Domains, ..Meshes, ..Topologies
 import ..slab
+import ..column
+import ..DataLayouts, ..Geometry, ..Domains, ..Meshes, ..Topologies
 using StaticArrays, ForwardDiff, LinearAlgebra, UnPack
 
 abstract type AbstractSpace end
 
+undertype(space::AbstractSpace) =
+    Geometry.undertype(eltype(local_geometry_data(space)))
+
+coordinates_data(space::AbstractSpace) = local_geometry_data(space).coordinates
+
 include("quadrature.jl")
 import .Quadratures
 
-include("dss.jl")
 include("spectralelement.jl")
 include("finitedifference.jl")
 include("hybrid.jl")
+include("dss.jl")
 
 end # module

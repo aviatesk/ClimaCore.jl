@@ -27,6 +27,14 @@ function GridTopology(mesh::EquispacedRectangleMesh)
     GridTopology(mesh, boundaries)
 end
 
+function GridTopology1D(mesh::Meshes.EquispacedLineMesh)
+    x1boundary = mesh.domain.x3boundary
+    x2boundary = nothing
+    boundaries =
+        isnothing(x1boundary) ? NamedTuple() : NamedTuple{x1boundary}((1, 2))
+    return GridTopology(mesh, boundaries)
+end
+
 function Base.show(io::IO, topology::GridTopology)
     print(io, "GridTopology on ", topology.mesh)
 end
@@ -37,6 +45,7 @@ function nlocalelems(topology::GridTopology)
     n2 = topology.mesh.n2
     return n1 * n2
 end
+eachslabindex(topology::GridTopology) = 1:nlocalelems(topology)
 
 function vertex_coordinates(topology::GridTopology, elem::Integer)
     @assert 1 <= elem <= nlocalelems(topology)
@@ -204,8 +213,8 @@ function boundary_tag(topology::GridTopology, name::Symbol)
         x1boundary[2] == name && return 2
     end
     if !isnothing(x2boundary)
-        x1boundary[1] == name && return 3
-        x1boundary[2] == name && return 4
+        x2boundary[1] == name && return 3
+        x2boundary[2] == name && return 4
     end
     error("Invalid boundary name")
 end
@@ -293,8 +302,8 @@ function Base.iterate(
     n2 = mesh.n2
     x1periodic = isnothing(mesh.domain.x1boundary)
     x2periodic = isnothing(mesh.domain.x2boundary)
-    nv1 = x1periodic ? n1 : n1 + 1
-    nv2 = x2periodic ? n2 : n2 + 1
+    nv1 = x1periodic ? n1 : n1 + 1 # unique vertices in x1 direction
+    nv2 = x2periodic ? n2 : n2 + 1 # unique vertices in x2 direction
 
     if z2 >= nv2
         return nothing
@@ -327,6 +336,7 @@ end
 
 
 function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: GridTopology}
+    # iterator of (element, vertnum) that share global vertex
     topology = vertex.topology
     mesh = topology.mesh
     n1 = mesh.n1
@@ -338,6 +348,7 @@ function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: GridTopology}
     z1, z2 = vertex.num
 
     vert += 1
+    # at the boundary, skip non-existent elements
     if !x1periodic
         if z1 == 0 && (vert == 2 || vert == 4)
             vert += 1
@@ -363,7 +374,7 @@ function Base.iterate(vertex::Vertex{T}, vert = 0) where {T <: GridTopology}
         z1 = mod(z1 - 1, nv1)
     end
     if vert == 3 || vert == 4
-        z2 = mod(z2 - 1, nv1)
+        z2 = mod(z2 - 1, nv2)
     end
     elem = z2 * n1 + z1 + 1
     return (elem, vert), vert

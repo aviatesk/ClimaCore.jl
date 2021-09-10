@@ -11,7 +11,6 @@
 # get_offset(array, S, offset) => S(...), next_offset
 import Base: @propagate_inbounds
 
-
 """
     basetype(S...)
 
@@ -25,13 +24,36 @@ function basetype(::Type{S}) where {S}
     basetype(ntuple(i -> fieldtype(S, i), fieldcount(S))...)
 end
 function basetype(::Type{S1}, Sx...) where {S1}
+    if sizeof(S1) == 0
+        return basetype(Sx...)
+    end
     FT1 = basetype(S1)
     FT2 = basetype(Sx...)
     FT1 !== FT2 && error("Inconsistent basetypes $FT1 and $FT2")
     return FT1
 end
 
+replace_basetype(::Type{S}, ::Type{FT}) where {S <: AbstractFloat, FT} = FT
+function replace_basetype(::Type{S}, ::Type{FT}) where {S <: Tuple, FT}
+    Tuple{ntuple(i -> replace_basetype(fieldtype(S, i), FT), fieldcount(S))...}
+end
+function replace_basetype(
+    ::Type{NamedTuple{names, T}},
+    ::Type{FT},
+) where {names, T, FT}
+    NamedTuple{names, replace_basetype(T, FT)}
+end
 
+
+
+"""
+    parent_array_type(::Type{<:AbstractArray})
+
+Returns the parent array type underlying the `SubArray` wrapper type
+"""
+parent_array_type(::Type{A}) where {A <: AbstractArray{FT}} where {FT} =
+    Array{FT}
+# TODO: extract interface to overload for backends into separate file
 
 """
     StructArrays.bypass_constructor(T, args)
@@ -62,7 +84,28 @@ fieldtypeoffset(::Type{T}, ::Type{S}, i) where {T, S} =
 
 Similar to `sizeof(S)`, but gives the result in multiples of `sizeof(T)`.
 """
-typesize(::Type{T}, ::Type{S}) where {T, S} = div(sizeof(S), sizeof(T))
+function typesize(::Type{T}, ::Type{S}) where {T, S}
+    isbitstype(T) || error("$T is not isbitstype")
+    isbitstype(S) || error("$S is not isbitstype")
+    div(sizeof(S), sizeof(T))
+end
+
+# TODO: this assumes that the field struct zero type is the same as the backing
+# zero'd out memory, which should be true in all "real world" cases 
+# but is something that should be revisited
+@inline function _mzero!(out::MArray{S, T, N, L}, FT) where {S, T, N, L}
+    TdivFT = DataLayouts.typesize(FT, T)
+    Base.GC.@preserve out begin
+        @inbounds for i in 1:(L * TdivFT)
+            Base.unsafe_store!(
+                Base.unsafe_convert(Ptr{FT}, Base.pointer_from_objref(out)),
+                zero(FT),
+                i,
+            )
+        end
+    end
+    return out
+end
 
 
 """
@@ -148,6 +191,7 @@ function set_struct!(array::AbstractArray{T}, val::S, offset) where {T, S}
         return nothing
     end
 end
+
 @propagate_inbounds function set_struct!(
     array::AbstractArray{S},
     val::S,
@@ -155,6 +199,7 @@ end
 ) where {S}
     array[offset + 1] = val
 end
+
 @propagate_inbounds function set_struct!(array, val)
     set_struct!(array, val, 0)
 end

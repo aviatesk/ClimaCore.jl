@@ -39,16 +39,26 @@ function Base.copy(
     error("cannot infer concrete eltype of $(bc.f) on $(map(eltype, bc.args))")
 end
 
-
 function slab(
     bc::Base.Broadcast.Broadcasted{Style},
+    v,
     h,
 ) where {Style <: AbstractFieldStyle}
-    _args = map(a -> slab(a, h), bc.args)
-    _axes = slab(axes(bc), h)
+    _args = map(a -> slab(a, v, h), bc.args)
+    _axes = slab(axes(bc), v, h)
     Base.Broadcast.Broadcasted{Style}(bc.f, _args, _axes)
 end
 
+function column(
+    bc::Base.Broadcast.Broadcasted{Style},
+    i,
+    j,
+    h,
+) where {Style <: AbstractFieldStyle}
+    _args = map(a -> column(a, i, j, h), bc.args)
+    _axes = column(axes(bc), i, j, h)
+    Base.Broadcast.Broadcasted{Style}(bc.f, _args, _axes)
+end
 
 # Return underlying DataLayout object, DataStyle of broadcasted
 # for `Base.similar` of a Field
@@ -141,8 +151,7 @@ function Base.Broadcast.broadcasted(
         fs,
         Geometry._norm,
         arg,
-        hasproperty(space, :local_geometry) ?
-        Field(space.local_geometry, space) : Ref(nothing),
+        local_geometry_field(space),
     )
 end
 function Base.Broadcast.broadcasted(
@@ -156,8 +165,7 @@ function Base.Broadcast.broadcasted(
         fs,
         Geometry._norm_sqr,
         arg,
-        hasproperty(space, :local_geometry) ?
-        Field(space.local_geometry, space) : Ref(nothing),
+        local_geometry_field(space),
     )
 end
 
@@ -174,7 +182,7 @@ function Base.Broadcast.broadcasted(
         Geometry._cross,
         arg1,
         arg2,
-        Field(space.local_geometry, space),
+        local_geometry_field(space),
     )
 end
 
@@ -182,8 +190,28 @@ function Base.Broadcast.broadcasted(
     fs::AbstractFieldStyle,
     ::Type{V},
     arg,
-) where {V <: Geometry.CustomAxisFieldVector}
+) where {V <: Geometry.AxisVector}
     space = Fields.axes(arg)
     # wrap in a Field so that the axes line up correctly (it just get's unwraped so effectively a no-op)
-    Base.Broadcast.broadcasted(fs, V, arg, Field(space.local_geometry, space))
+    Base.Broadcast.broadcasted(fs, V, arg, local_geometry_field(space))
 end
+
+function Base.Broadcast.copyto!(
+    field::Field,
+    bc::Base.Broadcast.Broadcasted{Base.Broadcast.DefaultArrayStyle{0}},
+)
+    copyto!(Fields.field_values(field), bc)
+    return field
+end
+function Base.Broadcast.copyto!(field::Field, nt::NamedTuple)
+    copyto!(
+        field,
+        Base.Broadcast.Broadcasted{Base.Broadcast.DefaultArrayStyle{0}}(
+            identity,
+            (nt,),
+            axes(field),
+        ),
+    )
+end
+
+Base.fill!(field::Fields.Field, val) = field .= val

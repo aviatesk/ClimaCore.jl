@@ -1,4 +1,4 @@
-import RecursiveArrayTools, Requires, DiffEqBase
+import RecursiveArrayTools, DiffEqBase
 
 # for compatibility with OrdinaryDiffEq
 # Based on ApproxFun definitions
@@ -11,6 +11,11 @@ import RecursiveArrayTools, Requires, DiffEqBase
 Base.any(f, field::Field) = any(f, parent(field))
 
 Base.muladd(x, field::Field) = muladd.(x, field)
+
+Base.similar(field::F, ::Type{F}) where {F <: Field} = similar(field)
+
+Base.vec(field::Field) = vec(parent(field))
+
 
 RecursiveArrayTools.recursive_unitless_eltype(field::Field) = typeof(field)
 
@@ -63,6 +68,12 @@ function DiffEqBase.calculate_residuals!(
         t,
     )
 end
+
+@inline function calculate_residuals!(out, ũ, u₀, u₁, α, ρ, internalnorm, t)
+    @. out = calculate_residuals(ũ, u₀, u₁, α, ρ, internalnorm, t)
+    nothing
+end
+
 
 # Play nice with DiffEq ArrayPartition
 DiffEqBase.UNITLESS_ABS2(field::Field) =
