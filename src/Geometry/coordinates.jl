@@ -47,6 +47,9 @@ end
 const Cartesian2DPoint = Cartesian12Point
 const Cartesian3DPoint = Cartesian123Point
 
+@pointtype LatLongPoint lat long
+
+
 
 product_coordinates(xp::XPoint{FT}, zp::ZPoint{FT}) where {FT} =
     XZPoint{FT}(xp.x, zp.z)

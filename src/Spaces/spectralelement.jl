@@ -293,6 +293,216 @@ function compute_surface_geometry(
     return Geometry.SurfaceGeometry(sWJ, n)
 end
 
+
+"""
+    SpectralElementSpace2D_sphere(topology, quadrature_style)
+
+Construct a `SpectralElementSpace2D` instance given a `topology` and `quadrature`.
+"""
+function SpectralElementSpace2D_sphere(topology, quadrature_style)
+    FT = eltype(topology.mesh)
+    CT = Geometry.LatLong{FT} # Domains.coordinate_type(topology)
+    nelements = Topologies.nlocalelems(topology)
+    Nq = Quadratures.degrees_of_freedom(quadrature_style)
+
+    # types of the partial derivative tensors
+    # ∂x∂ξ
+    Mxξ = Geometry.Axis2Tensor{
+        FT,
+        Tuple{Geometry.UVAxis, Geometry.Covariant12Axis},
+        SMatrix{2, 2, FT, 4},
+    }
+    # ∂ξ∂x
+    Mξx = Geometry.Axis2Tensor{
+        FT,
+        Tuple{Geometry.Contravariant12Axis, Geometry.UVAxis},
+        SMatrix{2, 2, FT, 4},
+    }
+    LG = Geometry.LocalGeometry{CT, FT, Mxξ, Mξx}
+
+    local_geometry = DataLayouts.IJFH{LG, Nq}(Array{FT}, nelements)
+    quad_points, quad_weights =
+        Quadratures.quadrature_points(FT, quadrature_style)
+
+    for elem in 1:nelements
+        local_geometry_slab = slab(local_geometry, elem)
+        for i in 1:Nq, j in 1:Nq
+            # compute the coordinate and partial derivative matrices for each quadrature point
+            # Guba (??)
+            # to compute the coordinates:
+            #   1) bilinear interpolation Cartesian123Points on the unit sphere
+            #   2) re-normalise to the unit sphere
+            #   3) convert to lat long
+
+            # to compute the partial derivatives terms. Options:
+
+            #  a) Analytic from design doc formulas
+            #  b) Analytic via ForwardDiff.jl
+            #   1) Use ForwardDiff to differentiate through the coordinate calculation to get 
+            #       ∂(ϕ,λ)/∂ξ (ϕ -> latitude, λ -> longitude)
+            #   2) rescale these to get back to the "local" cartesian (UV) basis
+            #      https://en.wikipedia.org/wiki/Zonal_and_meridional_flow
+            #      v = ∂ϕ/∂ξ scaled by r => ∂ϕ/∂ξ = []
+            #      u = ∂λ/∂ξ scaled by r * cos(ϕ)
+            #         vrad =
+            #   3) deal with points at the poles
+            #  c) numerical: take the spectral element derivative (what is done in ClimateMachine.jl)
+
+            # a and b should be equivalent
+
+
+            # this hard-codes a bunch of assumptions, and will unnecesarily duplicate data
+            # e.g. where all metric terms are uniform over the space
+            # alternatively: move local_geometry to a different object entirely, to support overintegration
+            # (where the integration is of different order)
+            ξ = SVector(quad_points[i], quad_points[j])
+            x = Geometry.interpolate(
+                Topologies.vertex_coordinates(topology, elem),
+                ξ[1],
+                ξ[2],
+            )
+            ∂x∂ξ = ForwardDiff.jacobian(ξ) do ξ
+                local x
+                x = Geometry.interpolate(
+                    Geometry.XYPoint.(
+                        Topologies.vertex_coordinates(topology, elem),
+                    ),
+                    ξ[1],
+                    ξ[2],
+                )
+                SVector(getfield(x, 1), getfield(x, 2))
+            end
+            J = det(∂x∂ξ)
+            ∂ξ∂x = inv(∂x∂ξ)
+            WJ = J * quad_weights[i] * quad_weights[j]
+
+            local_geometry_slab[i, j] = Geometry.LocalGeometry(
+                x,
+                J,
+                WJ,
+                Geometry.AxisTensor(
+                    (Geometry.Cartesian12Axis(), Geometry.Covariant12Axis()),
+                    ∂x∂ξ,
+                ),
+                Geometry.AxisTensor(
+                    (
+                        Geometry.Contravariant12Axis(),
+                        Geometry.Cartesian12Axis(),
+                    ),
+                    ∂ξ∂x,
+                ),
+            )
+        end
+    end
+
+    # dss_weights = J ./ dss(J)
+    dss_weights = copy(local_geometry.J)
+    dss_2d!(dss_weights, local_geometry.J, topology, Nq)
+    dss_weights .= local_geometry.J ./ dss_weights
+
+    SG = Geometry.SurfaceGeometry{FT, Geometry.Cartesian12Vector{FT}}
+    interior_faces = Topologies.interior_faces(topology)
+
+    internal_surface_geometry =
+        DataLayouts.IFH{SG, Nq}(Array{FT}, length(interior_faces))
+    for (iface, (elem⁻, face⁻, elem⁺, face⁺, reversed)) in
+        enumerate(interior_faces)
+        internal_surface_geometry_slab = slab(internal_surface_geometry, iface)
+
+        local_geometry_slab⁻ = slab(local_geometry, elem⁻)
+        local_geometry_slab⁺ = slab(local_geometry, elem⁺)
+
+        for q in 1:Nq
+            sgeom⁻ = compute_surface_geometry(
+                local_geometry_slab⁻,
+                quad_weights,
+                face⁻,
+                q,
+                false,
+            )
+            sgeom⁺ = compute_surface_geometry(
+                local_geometry_slab⁺,
+                quad_weights,
+                face⁺,
+                q,
+                false,
+            )
+
+            @assert sgeom⁻.sWJ ≈ sgeom⁺.sWJ
+            @assert sgeom⁻.normal ≈ -sgeom⁺.normal
+
+            internal_surface_geometry_slab[q] = sgeom⁻
+        end
+    end
+
+    boundary_surface_geometries =
+        map(Topologies.boundaries(topology)) do boundarytag
+            boundary_faces = Topologies.boundary_faces(topology, boundarytag)
+            boundary_surface_geometry =
+                DataLayouts.IFH{SG, Nq}(Array{FT}, length(boundary_faces))
+            for (iface, (elem, face)) in enumerate(boundary_faces)
+                boundary_surface_geometry_slab =
+                    slab(boundary_surface_geometry, iface)
+                local_geometry_slab = slab(local_geometry, elem)
+                for q in 1:Nq
+                    boundary_surface_geometry_slab[q] =
+                        compute_surface_geometry(
+                            local_geometry_slab,
+                            quad_weights,
+                            face,
+                            q,
+                            false,
+                        )
+                end
+            end
+            boundary_surface_geometry
+        end
+
+    return SpectralElementSpace2D(
+        topology,
+        quadrature_style,
+        local_geometry,
+        dss_weights,
+        internal_surface_geometry,
+        boundary_surface_geometries,
+    )
+end
+
+nlevels(space::SpectralElementSpace2D) = 1
+
+function compute_surface_geometry(
+    local_geometry_slab,
+    quad_weights,
+    face,
+    q,
+    reversed = false,
+)
+    Nq = length(quad_weights)
+    @assert size(local_geometry_slab) == (Nq, Nq, 1, 1, 1)
+    i, j = Topologies.face_node_index(face, Nq, q, reversed)
+
+    local_geometry = local_geometry_slab[i, j]
+    @unpack J, ∂ξ∂x = local_geometry
+
+    # surface mass matrix
+    n = if face == 1
+        -J * ∂ξ∂x[1, :] * quad_weights[j]
+    elseif face == 2
+        J * ∂ξ∂x[1, :] * quad_weights[j]
+    elseif face == 3
+        -J * ∂ξ∂x[2, :] * quad_weights[i]
+    elseif face == 4
+        J * ∂ξ∂x[2, :] * quad_weights[i]
+    end
+    sWJ = norm(n)
+    n = n / sWJ
+    return Geometry.SurfaceGeometry(sWJ, n)
+end
+
+
+
+
+
 function variational_solve!(data, space::AbstractSpace)
     data .= RecursiveApply.rdiv.(data, space.local_geometry.WJ)
 end

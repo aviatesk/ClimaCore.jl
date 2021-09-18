@@ -236,6 +236,8 @@ const CartesianTensor = Union{CartesianVector, Cartesian2Tensor}
 for I in [(1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
     strI = join(I)
     N = length(I)
+
+    UVW = [:U, :V, :W]
     @eval begin
         const $(Symbol(:Covariant, strI, :Axis)) = CovariantAxis{$I}
         const $(Symbol(:Covariant, strI, :Vector)){T} =
@@ -248,8 +250,13 @@ for I in [(1,), (2,), (3,), (1, 2), (1, 3), (2, 3), (1, 2, 3)]
         const $(Symbol(:Cartesian, strI, :Axis)) = CartesianAxis{$I}
         const $(Symbol(:Cartesian, strI, :Vector)){T} =
             AxisVector{T, CartesianAxis{$I}, SVector{$N, T}}
+
+        const $(Symbol(map(i -> UVW[i], I), :Axis)) = LocalAxis{$I}
+        const $(Symbol(map(i -> UVW[i], I), :Vector)){T} = AxisVector{T, LocalAxis{$I}, SVector{$N, T}}
     end
 end
+
+
 
 # LinearAlgebra
 
