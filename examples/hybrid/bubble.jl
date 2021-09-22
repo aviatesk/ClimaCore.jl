@@ -25,8 +25,8 @@ global_logger(TerminalLogger())
 function hvspace_2D(
     xlim = (-π, π),
     zlim = (0, 4π),
-    helem = 10,
-    velem = 50,
+    helem = 8,
+    velem = 25,
     npoly = 4,
 )
     FT = Float64
@@ -180,7 +180,7 @@ function rhs!(dY, Y, _, t)
     @. dρw =  hdiv(hgrad(ρw))
     Spaces.weighted_dss!(dYc)
 
-    κ = 10.0
+    κ = 0.0
     @. dYc.ρ = κ * hdiv(hgrad(dYc.ρ))
     @. dYc.ρθ = κ * hdiv(hgrad(dYc.ρθ))
     @. dYc.ρuₕ = κ * hdiv(hgrad(dYc.ρuₕ))
@@ -257,8 +257,8 @@ rhs!(dYdt, Y, nothing, 0.0);
 
 # run!
 using OrdinaryDiffEq
-Δt = 0.03
-prob = ODEProblem(rhs!, Y, (0.0, 200.0))
+Δt = 0.05
+prob = ODEProblem(rhs!, Y, (0.0, 700.0))
 sol = solve(
     prob,
     SSPRK33(),

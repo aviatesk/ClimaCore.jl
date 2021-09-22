@@ -21,7 +21,7 @@ const CI = !isnothing(get(ENV, "CI", nothing))
 
 const FT = Float64
 
-n = 32
+n = 16
 z₀ = FT(0)
 z₁ = FT(10)
 t₀ = FT(0)
@@ -71,6 +71,11 @@ function ∑tendencies!(dT, T, z, t)
         ),
     )
 
+    fcc = Operators.FluxCorrectionC2C(bottom=Operators.Extrapolate(), 
+                                      top=Operators.Extrapolate())
+    fcf = Operators.FluxCorrectionF2F(bottom=Operators.Extrapolate(), 
+                                      top=Operators.Extrapolate())
+
     #   Upwind Biased Product
     #   UB = Operators.UpwindBiasedProductC2F(
     #       bottom = Operators.Extrapolate(),
@@ -85,7 +90,7 @@ function ∑tendencies!(dT, T, z, t)
     gradc2f = Operators.GradientC2F(bottom = bc_vb, top = bc_gt)
     divf2c = Operators.DivergenceF2C()
 
-    return @. dT = divf2c(ν * gradc2f(T)) - A(V, T)
+    return @. dT = divf2c(ν * gradc2f(T)) - A(V, T) + fcc(V, T)
 end
 
 @show ∑tendencies!(similar(T), T, nothing, 0.0);

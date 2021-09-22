@@ -86,6 +86,9 @@ function tendency!(dY, Y, _, t)
         top = Operators.SetValue(0.0),
     )
 
+    fcc = Operators.FluxCorrectionC2C(bottom=Operators.Extrapolate(), top=Operators.Extrapolate())
+    fcf = Operators.FluxCorrectionF2F(bottom=Operators.Extrapolate(), top=Operators.Extrapolate())
+
     # u-momentum
     bcs_bottom =
         Operators.SetValue(Geometry.Cartesian3Vector(Cd * u_wind * u_1))  # Eq. 4.16
@@ -100,7 +103,7 @@ function tendency!(dY, Y, _, t)
     bcs_top = Operators.SetValue(FT(vg))  # Eq. 4.19
     gradc2f = Operators.GradientC2F(top = bcs_top)
     divf2c = Operators.DivergenceF2C(bottom = bcs_bottom)
-    @. dv = divf2c(ν * gradc2f(v)) - f * (u - ug) - A(w, v)   # Eq. 4.9
+    @. dv = divf2c(ν * gradc2f(v)) - f * (u - ug) - A(w, v) # Eq. 4.9
 
 
     return dY
