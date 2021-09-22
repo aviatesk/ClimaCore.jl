@@ -95,7 +95,7 @@ function tendency!(dY, Y, _, t)
     bcs_top = Operators.SetValue(FT(ug))  # Eq. 4.18
     gradc2f = Operators.GradientC2F(top = bcs_top)
     divf2c = Operators.DivergenceF2C(bottom = bcs_bottom)
-    @. du = divf2c(ν * gradc2f(u)) + f * (v - vg) - A(w, u)   # Eq. 4.8
+    @. du = divf2c(ν * gradc2f(u)) + f * (v - vg) - A(w, u) + fcc(w,u)   # Eq. 4.8
 
     # v-momentum
     bcs_bottom =
@@ -103,7 +103,7 @@ function tendency!(dY, Y, _, t)
     bcs_top = Operators.SetValue(FT(vg))  # Eq. 4.19
     gradc2f = Operators.GradientC2F(top = bcs_top)
     divf2c = Operators.DivergenceF2C(bottom = bcs_bottom)
-    @. dv = divf2c(ν * gradc2f(v)) - f * (u - ug) - A(w, v) # Eq. 4.9
+    @. dv = divf2c(ν * gradc2f(v)) - f * (u - ug) - A(w, v) + fcc(w,u) # Eq. 4.9
 
 
     return dY

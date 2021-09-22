@@ -25,9 +25,9 @@ global_logger(TerminalLogger())
 function hvspace_2D(
     xlim = (-π, π),
     zlim = (0, 4π),
-    helem = 8,
-    velem = 25,
-    npoly = 4,
+    helem = 10,
+    velem = 50,
+    npoly = 5,
 )
     FT = Float64
     vertdomain = Domains.IntervalDomain(
@@ -180,11 +180,11 @@ function rhs!(dY, Y, _, t)
     @. dρw =  hdiv(hgrad(ρw))
     Spaces.weighted_dss!(dYc)
 
-    κ = 0.0
-    @. dYc.ρ = κ * hdiv(hgrad(dYc.ρ))
-    @. dYc.ρθ = κ * hdiv(hgrad(dYc.ρθ))
-    @. dYc.ρuₕ = κ * hdiv(hgrad(dYc.ρuₕ))
-    @. dρw =  κ * hdiv(hgrad(dρw))
+    κ₄ = 0.0
+    @. dYc.ρ = κ₄ * hdiv(hgrad(dYc.ρ))
+    @. dYc.ρθ = κ₄ * hdiv(hgrad(dYc.ρθ))
+    @. dYc.ρuₕ = κ₄ * hdiv(hgrad(dYc.ρuₕ))
+    @. dρw =  κ₄ * hdiv(hgrad(dρw))
 
     uₕ = @. Yc.ρuₕ / Yc.ρ
     w = @. ρw / If(Yc.ρ)
@@ -222,29 +222,28 @@ function rhs!(dY, Y, _, t)
 
     # 3) diffusion
     #=
-    κ = 10.0 # m^2/s
+    κ₂ = 10.0 # m^2/s
 
     Yfρ = @. If(Yc.ρ)
 
     #  1a) horizontal div of horizontal grad of horiz momentun
-    @. dYc.ρuₕ += hdiv(κ * (Yc.ρ * hgrad(Yc.ρuₕ / Yc.ρ)))
+    @. dYc.ρuₕ += hdiv(κ₂ * (Yc.ρ * hgrad(Yc.ρuₕ / Yc.ρ)))
 
     #  1b) vertical div of vertical grad of horiz momentun
-    @. dYc.ρuₕ += uvdivf2c(κ * (Yfρ * ∂f(Yc.ρuₕ / Yc.ρ)))
+    @. dYc.ρuₕ += uvdivf2c(κ₂ * (Yfρ * ∂f(Yc.ρuₕ / Yc.ρ)))
 
     #  1c) horizontal div of horizontal grad of vert momentum
-    @. dρw += hdiv(κ * (Yfρ * hgrad(ρw / Yfρ)))
+    @. dρw += hdiv(κ₂ * (Yfρ * hgrad(ρw / Yfρ)))
 
     #  1d) vertical div of vertical grad of vert momentun
-    @. dρw += vvdivc2f(κ * (Yc.ρ * ∂c(ρw / Yfρ)))
+    @. dρw += vvdivc2f(κ₂ * (Yc.ρ * ∂c(ρw / Yfρ)))
 
     # 2a) horizontal div of horizontal grad of potential temperature
-    @. dYc.ρθ += hdiv(κ * (Yc.ρ * hgrad(Yc.ρθ / Yc.ρ)))
+    @. dYc.ρθ += hdiv(κ₂ * (Yc.ρ * hgrad(Yc.ρθ / Yc.ρ)))
 
     # 2b) vertical div of vertial grad of potential temperature
-    @. dYc.ρθ += ∂(κ * (Yfρ * ∂f(Yc.ρθ / Yc.ρ)))
+    @. dYc.ρθ += ∂(κ₂ * (Yfρ * ∂f(Yc.ρθ / Yc.ρ)))
     =#
-
 
     Spaces.weighted_dss!(dYc)
     Spaces.weighted_dss!(dρw)
@@ -257,7 +256,7 @@ rhs!(dYdt, Y, nothing, 0.0);
 
 # run!
 using OrdinaryDiffEq
-Δt = 0.05
+Δt = 0.01
 prob = ODEProblem(rhs!, Y, (0.0, 700.0))
 sol = solve(
     prob,

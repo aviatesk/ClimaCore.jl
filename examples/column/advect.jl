@@ -59,7 +59,7 @@ function tendency2!(dθ, θ, _, t)
         right = Operators.SetValue(sin(b - t)),
     )
     ∂ = Operators.DivergenceF2C()
-    return @. dθ = -∂(UB(V, θ))  + fcc(V,θ)
+    return @. dθ = -∂(UB(V, θ)) + fcc(V,θ)
 end
 # use the advection operator
 function tendency3!(dθ, θ, _, t)
@@ -92,7 +92,7 @@ end
 
 @show tendency1!(similar(θ), θ, nothing, 0.0)
 # Solve the ODE operator
-Δt = 0.01
+Δt = 0.001
 prob1 = ODEProblem(tendency1!, θ, (0.0, 10.0))
 prob2 = ODEProblem(tendency2!, θ, (0.0, 10.0))
 prob3 = ODEProblem(tendency3!, θ, (0.0, 10.0))
