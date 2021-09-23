@@ -56,7 +56,6 @@ z₀ = FT(0)
 z₁ = FT(10)
 
 function ∑tendencies!(dT, T, z, t)
-
     ic2f = Operators.InterpolateC2F()
     bc_vb = Operators.SetValue(FT(gaussian(z₀, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)))
     bc_vt = Operators.SetValue(FT(gaussian(z₁, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)))
@@ -70,40 +69,60 @@ function ∑tendencies!(dT, T, z, t)
             FT(∇gaussian(z₁, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)),
         ),
     )
-
     fcc = Operators.FluxCorrectionC2C(bottom=Operators.Extrapolate(), 
                                       top=Operators.Extrapolate())
     fcf = Operators.FluxCorrectionF2F(bottom=Operators.Extrapolate(), 
                                       top=Operators.Extrapolate())
-
-    #   Upwind Biased Product
-    #   UB = Operators.UpwindBiasedProductC2F(
-    #       bottom = Operators.Extrapolate(),
-    #       top = bc_vt,
-    #   )
-    #   ∂ = Operators.GradientF2C()
-    #   return @. dT = -∂(UB(V, ic2f(T)))
-
     A = Operators.AdvectionC2C(bottom = bc_vb, top = Operators.Extrapolate())
-
-
     gradc2f = Operators.GradientC2F(bottom = bc_vb, top = bc_gt)
     divf2c = Operators.DivergenceF2C()
-
+    return @. dT = divf2c(ν * gradc2f(T)) - A(V, T)
+end
+function ∑tendencies2!(dT, T, z, t)
+    ic2f = Operators.InterpolateC2F()
+    bc_vb = Operators.SetValue(FT(gaussian(z₀, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)))
+    bc_vt = Operators.SetValue(FT(gaussian(z₁, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)))
+    bc_gb = Operators.SetGradient(
+        Geometry.Cartesian3Vector(
+            FT(∇gaussian(z₀, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)),
+        ),
+    )
+    bc_gt = Operators.SetGradient(
+        Geometry.Cartesian3Vector(
+            FT(∇gaussian(z₁, t; ν = ν, δ = δ, 𝓌 = 𝓌, μ = μ)),
+        ),
+    )
+    fcc = Operators.FluxCorrectionC2C(bottom=Operators.Extrapolate(), 
+                                      top=Operators.Extrapolate())
+    fcf = Operators.FluxCorrectionF2F(bottom=Operators.Extrapolate(), 
+                                      top=Operators.Extrapolate())
+    A = Operators.AdvectionC2C(bottom = bc_vb, top = Operators.Extrapolate())
+    gradc2f = Operators.GradientC2F(bottom = bc_vb, top = bc_gt)
+    divf2c = Operators.DivergenceF2C()
     return @. dT = divf2c(ν * gradc2f(T)) - A(V, T) + fcc(V, T)
 end
 
 @show ∑tendencies!(similar(T), T, nothing, 0.0);
+@show ∑tendencies2!(similar(T), T, nothing, 0.0);
 
 # Solve the ODE operator
-Δt = 0.0001
+Δt = 0.01
 
 prob = ODEProblem(∑tendencies!, T, (t₀, t₁))
+prob2 = ODEProblem(∑tendencies2!, T, (t₀, t₁))
 sol = solve(
     prob,
     SSPRK33(),
     dt = Δt,
-    saveat = 10000 * Δt,
+    saveat = 100 * Δt,
+    progress = true,
+    progress_message = (dt, u, p, t) -> t,
+);
+sol2 = solve(
+    prob2,
+    SSPRK33(),
+    dt = Δt,
+    saveat = 100 * Δt,
     progress = true,
     progress_message = (dt, u, p, t) -> t,
 );
@@ -136,16 +155,46 @@ anim = Plots.@animate for (nt, u) in enumerate(sol.u)
         zp,
         xlim = (0, 1),
         ylim = (-1, 10),
-        title = "$(nt) s",
+        title = "$(nt-1) s",
         lc = :red,
         lw = 2,
         label = "Analytical Sol.",
         m = :x,
     )
 end
+anim2 = Plots.@animate for (nt, u) in enumerate(sol2.u)
+    Plots.plot(
+        u,
+        xlim = (0, 1),
+        ylim = (-1, 10),
+        title = "$(nt-1) s",
+        lc = :green,
+        lw = 2,
+        ls = :dash,
+        label = "Approx Sol.",
+        legend = :outerright,
+        m = :o,
+        xlabel = "T(z)",
+        ylabel = "z",
+    )
+    Plots.plot!(
+        gaussian.(zp, nt - 1; μ = μ, δ = δ, ν = ν, 𝓌 = 𝓌),
+        zp,
+        xlim = (0, 1),
+        ylim = (-1, 10),
+        title = "$(nt-1) s",
+        lc = :red,
+        lw = 2,
+        label = "Analytical Sol.",
+        m = :x,
+    )
+end
+
 Plots.mp4(anim, joinpath(path, "advect_diffusion.mp4"), fps = 10)
-Plots.png(
-    Plots.plot(sol.u[end], xlim = (0, 1)),
+Plots.mp4(anim2, joinpath(path, "advect_diffusion_fcc.mp4"), fps = 10)
+p = Plots.plot(sol.u[end], xlim = (0, 1), lc=:black)
+p = Plots.plot!(sol2.u[end], xlim = (0, 1), lc=:green)
+Plots.png(p,
     joinpath(path, "advect_diffusion_end.png"),
 )
 
