@@ -1522,7 +1522,8 @@ function left_interor_window_idx(
     loc::LeftBoundaryWindow,
 )
     space = axes(bc)
-    maximum(arg -> left_interor_window_idx(arg, space, loc), bc.args)
+    # maximum(arg -> left_interor_window_idx(arg, space, loc), bc.args)
+    max(tuplemap(arg->left_interor_window_idx(arg, space, loc), bc.args)...)
 end
 function right_interor_window_idx(
     bc::Base.Broadcast.Broadcasted{CompositeStencilStyle},
@@ -1530,7 +1531,8 @@ function right_interor_window_idx(
     loc::RightBoundaryWindow,
 )
     space = axes(bc)
-    minimum(arg -> right_interor_window_idx(arg, space, loc), bc.args)
+    #minimum(arg -> right_interor_window_idx(arg, space, loc), bc.args)
+    min(tuplemap(arg->right_interor_window_idx(arg, space, loc), bc.args)...)
 end
 
 function left_interor_window_idx(field::Field, _, loc::LeftBoundaryWindow)
@@ -1672,6 +1674,14 @@ Base.Broadcast._broadcast_getindex_eltype(
     bc::Base.Broadcast.Broadcasted{StencilStyle},
 ) = eltype(bc)
 
+# TODO only take necessary fields instead of entire space
+@noinline function bc_error(dest_space, result_space)
+    error(
+        "dest space `$(summary(dest_space))` is not equal to the inferred broadcasted result space `$(summary(result_space))`",
+    )
+end
+
+
 # check that inferred output field space is equal to dest field space
 @inline function Base.Broadcast.materialize!(
     ::Base.Broadcast.BroadcastStyle,
@@ -1680,9 +1690,7 @@ Base.Broadcast._broadcast_getindex_eltype(
 ) where {Style <: AbstractStencilStyle}
     dest_space, result_space = axes(dest), axes(bc)
     if result_space !== dest_space
-        error(
-            "dest space `$(summary(dest_space))` is not equal to the inferred broadcasted result space `$(summary(result_space))`",
-        )
+        bc_error(dest_space, result_space)
     end
     # the default Base behavior is to instantiate a Broadcasted object with the same axes as the dest
     return copyto!(
@@ -1693,11 +1701,16 @@ Base.Broadcast._broadcast_getindex_eltype(
     )
 end
 
-function column(
+# Doesn't remove self-referential of `column`, but is best way of writing it.
+column_rec(inds, arg) = (column(arg, inds...),)
+column_rec(inds, arg, args...) = (column(arg, inds...), column_rec(inds, args...)...)
+
+# This is self-referential when `bc.args` contains Broadcasted 
+@inline function column(
     bc::Base.Broadcast.Broadcasted{Style},
     inds...,
 ) where {Style <: AbstractStencilStyle}
-    _args = map(a -> column(a, inds...), bc.args)
+    _args = column_rec(inds, bc.args...)
     _axes = column(axes(bc), inds...)
     Base.Broadcast.Broadcasted{Style}(bc.f, _args, _axes)
 end
@@ -1710,7 +1723,7 @@ function Base.similar(
     return Field(Eltype, sp)
 end
 
-function Base.copyto!(
+@inline function Base.copyto!(
     field_out::Field,
     bc::Base.Broadcast.Broadcasted{S},
 ) where {S <: AbstractStencilStyle}
@@ -1725,7 +1738,7 @@ function Base.copyto!(
     return field_out
 end
 
-function apply_stencil!(field_out, bc)
+@inline function apply_stencil!(field_out, bc)
     space = axes(bc)
     lbw = LeftBoundaryWindow{Spaces.left_boundary_name(space)}()
     rbw = RightBoundaryWindow{Spaces.right_boundary_name(space)}()
@@ -1744,4 +1757,12 @@ function apply_stencil!(field_out, bc)
         setidx!(field_out, idx, getidx(bc, rbw, idx))
     end
     return field_out
+end
+
+@inline function tuplemap(f::F, tup) where F
+    ntuple(Val(length(tup))) do I
+        Base.@_inline_meta
+        @inbounds elem = tup[I]
+        f(elem)
+    end 
 end
