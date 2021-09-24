@@ -1103,7 +1103,13 @@ function return_space(
 end
 
 
-function stencil_interior(::FluxCorrectionC2C, loc, idx, velocity_field, value_field)
+function stencil_interior(
+    ::FluxCorrectionC2C,
+    loc,
+    idx,
+    velocity_field,
+    value_field,
+)
     space = axes(value_field)
     θ⁺ = getidx(value_field, loc, idx + 1)
     θ = getidx(value_field, loc, idx)
@@ -1188,7 +1194,13 @@ function return_space(
 end
 
 
-function stencil_interior(::FluxCorrectionF2F, loc, idx, velocity_field, value_field)
+function stencil_interior(
+    ::FluxCorrectionF2F,
+    loc,
+    idx,
+    velocity_field,
+    value_field,
+)
     space = axes(value_field)
     θ⁺ = getidx(value_field, loc, idx + 1)
     θ = getidx(value_field, loc, idx)

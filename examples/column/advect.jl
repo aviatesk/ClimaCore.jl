@@ -37,37 +37,49 @@ V = Geometry.Cartesian3Vector.(ones(FT, fs))
 
 # upwinding
 function tendency1!(dθ, θ, _, t)
-    fcc = Operators.FluxCorrectionC2C(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
-    fcf = Operators.FluxCorrectionF2F(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
+    fcc = Operators.FluxCorrectionC2C(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
+    fcf = Operators.FluxCorrectionF2F(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
     UB = Operators.UpwindBiasedProductC2F(
         left = Operators.SetValue(sin(a - t)),
         right = Operators.SetValue(sin(b - t)),
     )
     ∂ = Operators.DivergenceF2C()
 
-    return @. dθ = -∂(UB(V, θ)) 
+    return @. dθ = -∂(UB(V, θ))
 end
 function tendency2!(dθ, θ, _, t)
-    fcc = Operators.FluxCorrectionC2C(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
-    fcf = Operators.FluxCorrectionF2F(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
+    fcc = Operators.FluxCorrectionC2C(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
+    fcf = Operators.FluxCorrectionF2F(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
     UB = Operators.UpwindBiasedProductC2F(
         left = Operators.SetValue(sin(a - t)),
         right = Operators.SetValue(sin(b - t)),
     )
     ∂ = Operators.DivergenceF2C()
-    return @. dθ = -∂(UB(V, θ)) + fcc(V,θ)
+    return @. dθ = -∂(UB(V, θ)) + fcc(V, θ)
 end
 # use the advection operator
 function tendency3!(dθ, θ, _, t)
 
-    fcc = Operators.FluxCorrectionC2C(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
-    fcf = Operators.FluxCorrectionF2F(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
+    fcc = Operators.FluxCorrectionC2C(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
+    fcf = Operators.FluxCorrectionF2F(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
     A = Operators.AdvectionC2C(
         left = Operators.SetValue(sin(-t)),
         right = Operators.Extrapolate(),
@@ -77,15 +89,19 @@ end
 # use the advection operator
 function tendency4!(dθ, θ, _, t)
 
-    fcc = Operators.FluxCorrectionC2C(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
-    fcf = Operators.FluxCorrectionF2F(left=Operators.Extrapolate(), 
-                                      right=Operators.Extrapolate())
+    fcc = Operators.FluxCorrectionC2C(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
+    fcf = Operators.FluxCorrectionF2F(
+        left = Operators.Extrapolate(),
+        right = Operators.Extrapolate(),
+    )
     A = Operators.AdvectionC2C(
         left = Operators.SetValue(sin(-t)),
         right = Operators.Extrapolate(),
     )
-    return @. dθ = -A(V, θ) + fcc(V,θ)
+    return @. dθ = -A(V, θ) + fcc(V, θ)
 end
 
 # use the advection operator
@@ -174,14 +190,11 @@ Plots.png(
     joinpath(path, "sol4_advect_end.png"),
 )
 
-p = Plots.plot(sol1.u[end], xlim = (-1, 1), ls=:dash, label = "UBP")
-p = Plots.plot!(sol2.u[end], xlim = (-1, 1), ls=:dot, label = "UBP_FC")
-p = Plots.plot!(sol3.u[end], xlim = (-1, 1), ls=:solid, label = "C2C") 
-p = Plots.plot!(sol4.u[end], xlim = (-1, 1), ls=:dashdot, label = "C2C_FC")
-Plots.png(
-    p,
-    joinpath(path, "all_advect_end.png"),
-)
+p = Plots.plot(sol1.u[end], xlim = (-1, 1), ls = :dash, label = "UBP")
+p = Plots.plot!(sol2.u[end], xlim = (-1, 1), ls = :dot, label = "UBP_FC")
+p = Plots.plot!(sol3.u[end], xlim = (-1, 1), ls = :solid, label = "C2C")
+p = Plots.plot!(sol4.u[end], xlim = (-1, 1), ls = :dashdot, label = "C2C_FC")
+Plots.png(p, joinpath(path, "all_advect_end.png"))
 
 function linkfig(figpath, alt = "")
     # buildkite-agent upload figpath

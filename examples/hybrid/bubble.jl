@@ -167,8 +167,14 @@ function rhs!(dY, Y, _, t)
         top = Operators.SetValue(Geometry.Cartesian3Vector(0.0)),
     )
 
-    fcc = Operators.FluxCorrectionC2C(bottom=Operators.Extrapolate(), top=Operators.Extrapolate())
-    fcf = Operators.FluxCorrectionF2F(bottom=Operators.Extrapolate(), top=Operators.Extrapolate())
+    fcc = Operators.FluxCorrectionC2C(
+        bottom = Operators.Extrapolate(),
+        top = Operators.Extrapolate(),
+    )
+    fcf = Operators.FluxCorrectionF2F(
+        bottom = Operators.Extrapolate(),
+        top = Operators.Extrapolate(),
+    )
 
 
 
@@ -177,14 +183,14 @@ function rhs!(dY, Y, _, t)
     @. dYc.ρ = hdiv(hgrad(Yc.ρ))
     @. dYc.ρθ = hdiv(hgrad(Yc.ρθ))
     @. dYc.ρuₕ = hdiv(hgrad(Yc.ρuₕ))
-    @. dρw =  hdiv(hgrad(ρw))
+    @. dρw = hdiv(hgrad(ρw))
     Spaces.weighted_dss!(dYc)
 
     κ = 10.0
     @. dYc.ρ = κ * hdiv(hgrad(dYc.ρ))
     @. dYc.ρθ = κ * hdiv(hgrad(dYc.ρθ))
     @. dYc.ρuₕ = κ * hdiv(hgrad(dYc.ρuₕ))
-    @. dρw =  κ * hdiv(hgrad(dρw))
+    @. dρw = κ * hdiv(hgrad(dρw))
 
     uₕ = @. Yc.ρuₕ / Yc.ρ
     w = @. ρw / If(Yc.ρ)
@@ -211,12 +217,13 @@ function rhs!(dY, Y, _, t)
 
 
     # vertical momentum
-    @. dρw += B(
-        Geometry.transform(
-            Geometry.Cartesian3Axis(),
-            -(∂f(p)) - If(Yc.ρ) * ∂f(Φ(coords.z)),
-        ) - vvdivc2f(Ic(ρw ⊗ w)),
-    ) + fcf(wc, ρw)
+    @. dρw +=
+        B(
+            Geometry.transform(
+                Geometry.Cartesian3Axis(),
+                -(∂f(p)) - If(Yc.ρ) * ∂f(Φ(coords.z)),
+            ) - vvdivc2f(Ic(ρw ⊗ w)),
+        ) + fcf(wc, ρw)
     uₕf = @. If_bc(Yc.ρuₕ / Yc.ρ) # requires boundary conditions
     @. dρw -= hdiv(uₕf ⊗ ρw)
 

@@ -212,4 +212,7 @@ function linkfig(figpath, alt = "")
     end
 end
 
-linkfig("output/$(dirname)/advect_step_function_end.png", "Advect End Simulation")
+linkfig(
+    "output/$(dirname)/advect_step_function_end.png",
+    "Advect End Simulation",
+)
